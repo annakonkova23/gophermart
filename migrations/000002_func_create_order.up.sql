@@ -1,1 +1,0 @@
-DROP FUNCTION IF EXISTS accum_system.create_order;
