@@ -18,3 +18,7 @@ func (as *AccumulationSystem) GetCurrentOrder(number string) (*model.Order, bool
 func (as *AccumulationSystem) DeleteProcessedOrder(number string) {
 	as.currentOrder.Delete(number)
 }
+
+func (as *AccumulationSystem) UpdateCurrentOrder(number string, order *model.Order) {
+	as.currentOrder.Store(order.Number, order)
+}

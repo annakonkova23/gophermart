@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	defaultHost  = "localhost:8080"
-	defaultDBUri = "postgres://user_main:user_main@localhost:5432/gophermartdb?sslmode=disable"
+	defaultHost           = "localhost:8080"
+	defaultDBUri          = "postgres://user_main:user_main@localhost:5432/gophermartdb?sslmode=disable"
+	defaultAccrualAddress = "http://localhost:8090"
 )
 
 type Config struct {
@@ -36,7 +37,7 @@ func getEnvInt(envKey string, defaultValue int) int {
 func GetConfig() *Config {
 	hostFlag := flag.String("a", defaultHost, "Адрес запуска HTTP-сервера")
 	dbUriFlag := flag.String("d", defaultDBUri, "Адрес подключения к базе данных")
-	accrualAddressFlag := flag.String("r", "", "Aдрес системы расчёта начислений")
+	accrualAddressFlag := flag.String("r", defaultAccrualAddress, "Aдрес системы расчёта начислений")
 	flag.Parse()
 
 	host := getEnvString("RUN_ADDRESS", *hostFlag)

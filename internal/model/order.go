@@ -25,7 +25,7 @@ var StatusesXmapCalc = map[string]string{
 	StatusCalcRegistered: StatusProcessing,
 	StatusCalcProcessed:  StatusProcessed,
 	StatusCalcInvalid:    StatusInvalid,
-	StatusProcessing:     StatusProcessing,
+	StatusCalcProcessing: StatusProcessing,
 }
 
 var StatusesCalcFinish = map[string]bool{
@@ -36,24 +36,24 @@ var StatusesCalcFinish = map[string]bool{
 }
 
 type Order struct {
-	Number     string          `json:"number"`
-	Status     string          `json:"status"`
-	Accrual    decimal.Decimal `json:"accrual,omitempty"`
-	UploadedAt time.Time       `json:"uploaded_at"`
-	User       string          `json:"-"`
-	Mx         sync.RWMutex    `json:"-"`
+	Number     string           `db:"number" json:"number"`
+	Status     string           `db:"status" json:"status"`
+	Accrual    *decimal.Decimal `db:"accrual" json:"accrual,omitempty"`
+	UploadedAt time.Time        `db:"uploaded_at" json:"uploaded_at"`
+	User       string           `json:"-"`
+	Mx         sync.RWMutex     `json:"-"`
 }
 
 type Balance struct {
-	Balance   decimal.Decimal `json:"current"`
-	Withdrawn decimal.Decimal `json:"withdrawn"`
-	Mx        sync.RWMutex    `json:"-"`
+	Balance   decimal.Decimal `json:"current" db:"balance"`
+	Withdrawn decimal.Decimal `json:"withdrawn" db:"withdrawn"`
+	Mx        sync.RWMutex    `json:"-" db:"-"`
 }
 
 type Withdraw struct {
-	OrderNumber string          `json:"order"`
-	Sum         decimal.Decimal `json:"sum"`
-	ProcessedAt time.Time       `json:"processed_at,omitempty"`
+	OrderNumber string          `json:"order" db:"number"`
+	Sum         decimal.Decimal `json:"sum" db:"sum"`
+	ProcessedAt time.Time       `json:"processed_at,omitempty" db:"processed_at"`
 }
 
 type StatusOrder struct {

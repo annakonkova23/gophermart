@@ -29,12 +29,13 @@ type AccumulationSystem struct {
 
 func NewAccumulationSystem(ctx context.Context, database *sqlx.DB, cfg *config.Config) *AccumulationSystem {
 	as := &AccumulationSystem{
-		users:     sync.Map{},
-		database:  database,
-		client:    accrual.NewAccrualClient(ctx, cfg.AccrualAddress, 10, 10*time.Second, 1000),
-		newOrders: make(chan string, 1000),
+		users:           sync.Map{},
+		database:        database,
+		client:          accrual.NewAccrualClient(ctx, cfg.AccrualAddress, 10, 10*time.Second, 1000),
+		newOrders:       make(chan string, 1000),
+		timeoutInterval: time.Second * 10,
 	}
-
+	/*функции инициализации*/
 	go as.monitorNewOrder(ctx)
 	go as.monitorResults(ctx)
 	return as
@@ -127,7 +128,7 @@ func (as *AccumulationSystem) GetBalance(user string) (*model.Balance, error) {
 }
 
 func (as *AccumulationSystem) WithdrawBonus(user string, req *model.Withdraw) error {
-
+	logrus.Infof("Запрос на списание пользователь %s, заказ %s, сумма %s", user, req.OrderNumber, req.Sum.String())
 	_, err := as.getUserByLoginDB(user)
 	if err != nil {
 		return model.ErrorNotAuthorization
@@ -136,8 +137,10 @@ func (as *AccumulationSystem) WithdrawBonus(user string, req *model.Withdraw) er
 	if !as.LuhnValid(req.OrderNumber) {
 		return model.ErrorNotValidNumber
 	}
-
-	/*Написать списание средств*/
+	err = as.withdrawBalance(context.Background(), user, req)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -176,6 +179,7 @@ func (as *AccumulationSystem) monitorNewOrder(ctx context.Context) {
 func (as *AccumulationSystem) monitorResults(ctx context.Context) {
 	logrus.Infoln("Старт мониторинга результатов")
 	for res := range as.client.Results() {
+		logrus.Infof("Получен результат для сохранения статуса, заказ %s, статус: %s", res.Number, res.Status)
 		err := as.compareAndSaveStatusOrder(ctx, res)
 		if err != nil {
 			logrus.Errorln("Ошибка сохранения статуса заказа", err)
@@ -184,29 +188,38 @@ func (as *AccumulationSystem) monitorResults(ctx context.Context) {
 }
 
 func (as *AccumulationSystem) compareAndSaveStatusOrder(ctx context.Context, orderStatus *model.StatusOrder) error {
-	order, ok := as.GetCurrentOrder(orderStatus.Number)
+	logrus.Infoln("Обновление заказа:", orderStatus.Number)
+	orderCurrent, ok := as.GetCurrentOrder(orderStatus.Number)
 	if !ok {
 		logrus.Errorf("Не найден заказ %s в системе", orderStatus.Number)
 	}
 	dZero := decimal.NewFromInt(0)
-	order.Mx.Lock()
-	defer order.Mx.Unlock()
-	if model.StatusesXmapCalc[order.Status] != order.Status {
-		order.Status = model.StatusesXmapCalc[order.Status]
-		order.Accrual = orderStatus.Accrual
-		if model.StatusesCalcFinish[order.Status] {
-			as.saveEndStatusOrderDB(ctx, order)
-			if order.Accrual.GreaterThan(dZero) {
-				as.addBalance(order.User, order.Accrual)
+	orderCurrent.Mx.Lock()
+	defer orderCurrent.Mx.Unlock()
+	if model.StatusesXmapCalc[orderStatus.Status] != orderCurrent.Status {
+		orderCurrent.Status = model.StatusesXmapCalc[orderStatus.Status]
+		orderCurrent.Accrual = &orderStatus.Accrual
+		if model.StatusesCalcFinish[orderStatus.Status] {
+			as.saveEndStatusOrderDB(ctx, orderCurrent)
+			if orderStatus.Accrual.GreaterThan(dZero) {
+				logrus.Infof("Получен баланс %s для заказа %s:", orderStatus.Accrual.String(), orderStatus.Number)
+				err := as.addBalance(orderCurrent.User, *orderCurrent.Accrual)
+				if err != nil {
+					return err
+				}
 			}
+			as.DeleteProcessedOrder(orderCurrent.Number)
 		} else {
-			err := as.saveStatusOrderDB(order)
+			err := as.saveStatusOrderDB(orderCurrent)
 			if err != nil {
-				logrus.Errorf("Ошибка сохранения статуса заказа %s в базу:%s", order.Number, err.Error())
+				logrus.Errorf("Ошибка сохранения статуса заказа %s в базу:%s", orderCurrent.Number, err.Error())
 				return err
 			}
+			as.UpdateCurrentOrder(orderCurrent.Number, orderCurrent)
 		}
 
+	} else {
+		logrus.Infof("Статус заказа %s не обновился", orderStatus.Number)
 	}
 	return nil
 }
@@ -220,7 +233,7 @@ func (as *AccumulationSystem) addBalance(user string, accrual decimal.Decimal) e
 	balanceUser.Mx.Lock()
 	defer balanceUser.Mx.Unlock()
 	balanceUser.Balance.Add(accrual)
-	err := as.saveBalanceDB(user, accrual)
+	err := as.saveBalanceDB(user, balanceUser)
 	if err != nil {
 		return err
 	}
@@ -228,9 +241,10 @@ func (as *AccumulationSystem) addBalance(user string, accrual decimal.Decimal) e
 	return nil
 }
 
-func (as *AccumulationSystem) withdrawBalance(user string, req *model.Withdraw) error {
+func (as *AccumulationSystem) withdrawBalance(ctx context.Context, user string, req *model.Withdraw) error {
 	balance, ok := as.balance.Load(user)
 	if !ok {
+		logrus.Errorf("У пользователя %s нет баланса", user)
 		return model.ErrorInsufficientFunds
 	}
 
@@ -242,12 +256,15 @@ func (as *AccumulationSystem) withdrawBalance(user string, req *model.Withdraw) 
 	if balanceUser.Balance.GreaterThanOrEqual(req.Sum) {
 		balanceUser.Balance.Sub(req.Sum)
 		balanceUser.Withdrawn.Add(req.Sum)
-		err := as.SaveWithdrawDB(user, balanceUser)
+		logrus.Infof("У пользователя %s списываем баллы %s", user, req.Sum.String())
+		req.ProcessedAt = time.Now()
+		err := as.saveBalanceAndWithdrawDB(ctx, user, balanceUser, req)
 		if err != nil {
 			return err
 		}
 		as.balance.Store(user, balanceUser)
 	} else {
+		logrus.Errorf("У пользователя %s недостаточно средств", user)
 		return model.ErrorInsufficientFunds
 	}
 	return nil

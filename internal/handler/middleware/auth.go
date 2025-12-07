@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sync"
 )
@@ -15,6 +16,7 @@ type UserCtxKey struct{}
 func (sbt *SessionsByToken) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c, err := r.Cookie("session_token")
+		fmt.Println(c.Value)
 		if err != nil || c.Value == "" {
 			http.Error(w, "Пользователь не авторизован", http.StatusUnauthorized)
 			return
@@ -22,8 +24,11 @@ func (sbt *SessionsByToken) AuthMiddleware(next http.Handler) http.Handler {
 
 		user, ok := sbt.session.Load(c.Value)
 		if !ok {
+			fmt.Println("not author")
 			http.Error(w, "Пользователь не авторизован", http.StatusUnauthorized)
 			return
+		} else {
+			fmt.Println(user)
 		}
 
 		// кладём юзера в контекст

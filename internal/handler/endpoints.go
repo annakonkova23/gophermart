@@ -12,6 +12,7 @@ import (
 	"github.com/annakonkova23/gophermart/internal/handler/middleware"
 	"github.com/annakonkova23/gophermart/internal/model"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 func (s *Server) registerUser(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +109,7 @@ func (s *Server) newOrder(w http.ResponseWriter, r *http.Request) {
 
 	user := middleware.CurrentUser(r)
 
-	if user != "" {
+	if user == "" {
 		http.Error(w, "Пользователь не авторизован", http.StatusUnauthorized)
 		return
 	}
@@ -123,6 +124,7 @@ func (s *Server) newOrder(w http.ResponseWriter, r *http.Request) {
 
 	err = s.accumulationSystem.NewOrder(user, text)
 	if err != nil {
+		logrus.Error(err)
 		if errors.Is(err, model.ErrorDoubleOperation) {
 			w.WriteHeader(http.StatusOK)
 			return
@@ -152,13 +154,14 @@ func (s *Server) getOrders(w http.ResponseWriter, r *http.Request) {
 
 	user := middleware.CurrentUser(r)
 
-	if user != "" {
+	if user == "" {
 		http.Error(w, "Пользователь не авторизован", http.StatusUnauthorized)
 		return
 	}
 
 	orders, err := s.accumulationSystem.GetOrders(user)
 	if err != nil {
+		logrus.Errorln(err)
 		if errors.Is(err, model.ErrorNotContent) {
 			http.Error(w, "У пользователя нет заказов", http.StatusNoContent)
 			return
@@ -185,13 +188,14 @@ func (s *Server) getBalance(w http.ResponseWriter, r *http.Request) {
 
 	user := middleware.CurrentUser(r)
 
-	if user != "" {
+	if user == "" {
 		http.Error(w, "Пользователь не авторизован", http.StatusUnauthorized)
 		return
 	}
 
 	balance, err := s.accumulationSystem.GetBalance(user)
 	if err != nil {
+		logrus.Error(err)
 		if errors.Is(err, model.ErrorNotAuthorization) {
 			http.Error(w, "Пользователь не авторизован", http.StatusUnauthorized)
 			return
@@ -219,7 +223,7 @@ func (s *Server) withdrawBonus(w http.ResponseWriter, r *http.Request) {
 
 	user := middleware.CurrentUser(r)
 
-	if user != "" {
+	if user == "" {
 		http.Error(w, "Пользователь не авторизован", http.StatusUnauthorized)
 		return
 	}
@@ -258,13 +262,14 @@ func (s *Server) getWithdrawals(w http.ResponseWriter, r *http.Request) {
 
 	user := middleware.CurrentUser(r)
 
-	if user != "" {
+	if user == "" {
 		http.Error(w, "Пользователь не авторизован", http.StatusUnauthorized)
 		return
 	}
 
 	withdrawals, err := s.accumulationSystem.GetWithdrawals(user)
 	if err != nil {
+		logrus.Errorln(err)
 		if errors.Is(err, model.ErrorNotAuthorization) {
 			http.Error(w, "Пользователь не авторизован", http.StatusUnauthorized)
 			return

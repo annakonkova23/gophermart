@@ -105,7 +105,7 @@ func (ac *AccrualClient) getStatus(ctx context.Context, order string) (*model.St
 		SetPathParams(map[string]string{
 			"number": order,
 		}).
-		Get("GET /api/orders/{number}")
+		Get("/api/orders/{number}")
 
 	if err != nil {
 		return nil, fmt.Errorf("Сетевая ошибка: %w", err)
