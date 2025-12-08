@@ -2,12 +2,10 @@ package service
 
 import (
 	"github.com/annakonkova23/gophermart/internal/model"
-	"github.com/shopspring/decimal"
 )
 
 func (as *AccumulationSystem) getBalance(user string) *model.Balance {
-	dZero := decimal.NewFromInt(0)
-	balanceUser := &model.Balance{Balance: dZero}
+	balanceUser := &model.Balance{Balance: model.Zero()}
 	balance, ok := as.balance.LoadOrStore(user, balanceUser)
 	if ok {
 		balanceUser = balance.(*model.Balance)

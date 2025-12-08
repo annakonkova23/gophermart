@@ -3,8 +3,6 @@ package model
 import (
 	"sync"
 	"time"
-
-	"github.com/shopspring/decimal"
 )
 
 const (
@@ -36,31 +34,31 @@ var StatusesCalcFinish = map[string]bool{
 }
 
 type Order struct {
-	Number     string           `db:"number" json:"number"`
-	Status     string           `db:"status" json:"status"`
-	Accrual    *decimal.Decimal `db:"accrual" json:"accrual,omitempty"`
-	UploadedAt time.Time        `db:"uploaded_at" json:"uploaded_at"`
-	User       string           `db:"user_login" json:"-"`
-	Mx         sync.RWMutex     `json:"-"`
+	Number     string       `db:"number" json:"number"`
+	Status     string       `db:"status" json:"status"`
+	Accrual    *JSONDecimal `db:"accrual" json:"accrual,omitempty"`
+	UploadedAt time.Time    `db:"uploaded_at" json:"uploaded_at"`
+	User       string       `db:"user_login" json:"-"`
+	Mx         sync.RWMutex `json:"-"`
 }
 
 type Balance struct {
-	Balance   decimal.Decimal `json:"current" db:"balance"`
-	Withdrawn decimal.Decimal `json:"withdrawn" db:"withdrawn"`
-	User      string          `db:"user_login" json:"-"`
-	Mx        sync.RWMutex    `json:"-" db:"-"`
+	Balance   JSONDecimal  `json:"current" db:"balance"`
+	Withdrawn JSONDecimal  `json:"withdrawn" db:"withdrawn"`
+	User      string       `db:"user_login" json:"-"`
+	Mx        sync.RWMutex `json:"-" db:"-"`
 }
 
 type Withdraw struct {
-	OrderNumber string          `json:"order" db:"number"`
-	Sum         decimal.Decimal `json:"sum" db:"sum"`
-	ProcessedAt time.Time       `json:"processed_at,omitempty" db:"processed_at"`
+	OrderNumber string      `json:"order" db:"number"`
+	Sum         JSONDecimal `json:"sum" db:"sum"`
+	ProcessedAt time.Time   `json:"processed_at,omitempty" db:"processed_at"`
 }
 
 type StatusOrder struct {
-	Number  string          `json:"order"`
-	Status  string          `json:"status"`
-	Accrual decimal.Decimal `json:"accrual,omitempty"`
+	Number  string      `json:"order"`
+	Status  string      `json:"status"`
+	Accrual JSONDecimal `json:"accrual,omitempty"`
 }
 
 type UserOrder struct {

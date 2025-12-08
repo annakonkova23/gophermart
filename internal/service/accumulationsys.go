@@ -10,7 +10,6 @@ import (
 	"github.com/annakonkova23/gophermart/internal/model"
 	"github.com/annakonkova23/gophermart/internal/service/accrual"
 	"github.com/jmoiron/sqlx"
-	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 )
 
@@ -95,7 +94,6 @@ func (as *AccumulationSystem) compareAndSaveStatusOrder(ctx context.Context, ord
 	if !ok {
 		logrus.Errorf("Не найден заказ %s в системе", orderStatus.Number)
 	}
-	dZero := decimal.NewFromInt(0)
 	orderCurrent.Mx.Lock()
 	defer orderCurrent.Mx.Unlock()
 	var balanceUser *model.Balance
@@ -103,7 +101,7 @@ func (as *AccumulationSystem) compareAndSaveStatusOrder(ctx context.Context, ord
 		orderCurrent.Status = model.StatusesXmapCalc[orderStatus.Status]
 		orderCurrent.Accrual = &orderStatus.Accrual
 		if model.StatusesCalcFinish[orderStatus.Status] {
-			if orderStatus.Accrual.GreaterThan(dZero) {
+			if orderStatus.Accrual.GreaterThan(model.Zero()) {
 				logrus.Infof("Получен баланс %s для заказа %s:", orderStatus.Accrual.String(), orderStatus.Number)
 				balanceUser = as.getBalance(orderCurrent.User)
 				balanceUser.Mx.Lock()

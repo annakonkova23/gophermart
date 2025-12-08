@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"time"
 
@@ -77,6 +78,9 @@ func (as *AccumulationSystem) GetOrders(user string) ([]*model.Order, error) {
 	orders, err := as.getOrderDB(user)
 	if err != nil {
 		return nil, err
+	}
+	for _, o := range orders {
+		fmt.Printf("Accrual type: %T, value: %v\n", o.Accrual, o.Accrual)
 	}
 	return orders, nil
 }
