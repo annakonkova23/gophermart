@@ -41,6 +41,22 @@ func (s *Server) registerUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	sessionToken, err := generateSessionToken()
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	s.session.AddSession(sessionToken, user.Login)
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    sessionToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+	})
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -78,6 +94,7 @@ func (s *Server) authUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+
 	sessionToken, err := generateSessionToken()
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
