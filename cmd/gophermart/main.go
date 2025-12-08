@@ -20,16 +20,16 @@ func main() {
 	cfg := config.GetConfig()
 	database, err := db.NewConnect(cfg.DBUri)
 	if err != nil {
-		logrus.Error("Ошибка при подключении к базе данных:", err)
-		log.Fatal(err)
-	} else {
-		logrus.Println("Подключение к базе данных успешно")
-		if err := db.RunMigrations(cfg.DBUri); err != nil {
-			logrus.Error("Ошибка при установке миграций:", err)
-			database = nil
-		}
+		log.Fatal("Ошибка при подключении к базе данных:", err)
 	}
-	accumSystem := service.NewAccumulationSystem(ctx, database, cfg)
+	logrus.Println("Подключение к базе данных успешно")
+	if err := db.RunMigrations(cfg.DBUri); err != nil {
+		log.Fatal("Ошибка при установке миграций:", err)
+	}
+	accumSystem, err := service.NewAccumulationSystem(ctx, database, cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
 	server := handler.NewServer(cfg.Host, accumSystem)
 
 	go func() {

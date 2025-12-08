@@ -1,6 +1,9 @@
 package service
 
-import "github.com/annakonkova23/gophermart/internal/model"
+import (
+	"github.com/annakonkova23/gophermart/internal/model"
+	"github.com/sirupsen/logrus"
+)
 
 func (as *AccumulationSystem) AddCurrentOrder(order *model.Order) {
 	as.currentOrder.Store(order.Number, order)
@@ -21,4 +24,16 @@ func (as *AccumulationSystem) DeleteProcessedOrder(number string) {
 
 func (as *AccumulationSystem) UpdateCurrentOrder(number string, order *model.Order) {
 	as.currentOrder.Store(order.Number, order)
+}
+
+func (as *AccumulationSystem) InitOrders() error {
+	logrus.Infoln("Инициализация необработанных заказов")
+	orders, err := as.loadOrderNotProcessedDB()
+	if err != nil {
+		return err
+	}
+	for _, o := range orders {
+		as.AddCurrentOrder(o)
+	}
+	return nil
 }

@@ -40,13 +40,14 @@ type Order struct {
 	Status     string           `db:"status" json:"status"`
 	Accrual    *decimal.Decimal `db:"accrual" json:"accrual,omitempty"`
 	UploadedAt time.Time        `db:"uploaded_at" json:"uploaded_at"`
-	User       string           `json:"-"`
+	User       string           `db:"user_login" json:"-"`
 	Mx         sync.RWMutex     `json:"-"`
 }
 
 type Balance struct {
 	Balance   decimal.Decimal `json:"current" db:"balance"`
 	Withdrawn decimal.Decimal `json:"withdrawn" db:"withdrawn"`
+	User      string          `db:"user_login" json:"-"`
 	Mx        sync.RWMutex    `json:"-" db:"-"`
 }
 

@@ -1,0 +1,31 @@
+package service
+
+import (
+	"github.com/annakonkova23/gophermart/internal/model"
+	"github.com/shopspring/decimal"
+)
+
+func (as *AccumulationSystem) getBalance(user string) *model.Balance {
+	dZero := decimal.NewFromInt(0)
+	balanceUser := &model.Balance{Balance: dZero}
+	balance, ok := as.balance.LoadOrStore(user, balanceUser)
+	if ok {
+		balanceUser = balance.(*model.Balance)
+	}
+	return balanceUser
+}
+
+func (as *AccumulationSystem) InitBalance() error {
+	balances, err := as.getAllBalanceDB()
+	if err != nil {
+		return err
+	}
+	for _, b := range balances {
+		as.balance.Store(b.User, b)
+	}
+	return nil
+}
+
+func (as *AccumulationSystem) UpdateBalance(user string, balance *model.Balance) {
+	as.balance.Store(user, balance)
+}

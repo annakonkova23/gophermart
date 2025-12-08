@@ -45,11 +45,11 @@ func (ac *AccrualClient) AddOrder(ctx context.Context, order string) error {
 }
 
 func (ac *AccrualClient) workerOrders(ctx context.Context, workerID int) {
-	logrus.Infof("worker %d started", workerID)
+	logrus.Infof("worker обработки заказов %d начал работу", workerID)
 	for {
 		select {
 		case <-ctx.Done():
-			logrus.Infof("worker %d stopped (ctx done)", workerID)
+			logrus.Infof("worker %d остановлен (ctx done)", workerID)
 			return
 
 		case order := <-ac.jobs:
@@ -89,7 +89,7 @@ func (ac *AccrualClient) pollOrder(ctx context.Context, workerID int, order stri
 
 		select {
 		case <-ctx.Done():
-			logrus.Infof("worker %d: stop polling order %s while waiting", workerID, order)
+			logrus.Infof("worker %d: остановка запроса статуса %s во время ожидания", workerID, order)
 			return
 		case <-time.After(ac.checkInterval):
 		}
