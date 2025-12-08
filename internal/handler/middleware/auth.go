@@ -16,7 +16,6 @@ type UserCtxKey struct{}
 func (sbt *SessionsByToken) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c, err := r.Cookie("session_token")
-		fmt.Println(c.Value)
 		if err != nil || c.Value == "" {
 			http.Error(w, "Пользователь не авторизован", http.StatusUnauthorized)
 			return

@@ -1,7 +1,10 @@
 package middleware
 
 import (
+	"bytes"
+	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -35,11 +38,27 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		start := time.Now()
 		uri := r.URL.RequestURI()
 		method := r.Method
+		contentType := r.Header.Get("Content-Type")
 
+		var bodyBytes []byte
+		if r.Body != nil && (contentType == "" || !strings.HasPrefix(contentType, "multipart/")) {
+			bodyBytes, _ = io.ReadAll(r.Body)
+			r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		}
+
+		logrus.WithFields(logrus.Fields{
+			"method":       method,
+			"uri":          uri,
+			"content_type": contentType,
+			"body":         string(bodyBytes),
+		}).Info("Получен запрос")
+
+		// Обёртка для записи статуса и размера ответа
 		logger := &responseLogger{ResponseWriter: w}
 
 		next.ServeHTTP(logger, r)
 
+		// Логируем завершение
 		logrus.WithFields(logrus.Fields{
 			"method":      method,
 			"uri":         uri,
