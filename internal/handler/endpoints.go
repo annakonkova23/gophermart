@@ -92,9 +92,7 @@ func (s *Server) authUser(w http.ResponseWriter, r *http.Request) {
 		Value:    sessionToken,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true, // true для HTTPS, на деве можно временно false
-		SameSite: http.SameSiteLaxMode,
-		Expires:  time.Now().Add(24 * time.Hour),
+		Secure:   false,
 	})
 
 	w.WriteHeader(http.StatusOK)
