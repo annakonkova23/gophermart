@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/annakonkova23/gophermart/internal/handler/middleware"
 	"github.com/annakonkova23/gophermart/internal/model"
