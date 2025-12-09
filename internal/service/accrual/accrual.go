@@ -108,7 +108,8 @@ func (ac *AccrualClient) getStatus(ctx context.Context, order string) (*model.St
 		Get("/api/orders/{number}")
 
 	if err != nil {
-		return nil, fmt.Errorf("Сетевая ошибка: %w", err)
+		err := fmt.Errorf("сетевая ошибка: %w", err)
+		return nil, err
 	}
 
 	switch r.StatusCode() {
@@ -117,15 +118,17 @@ func (ac *AccrualClient) getStatus(ctx context.Context, order string) (*model.St
 		return resp, nil
 
 	case 204:
-		logrus.Infof("Заказа %s нет в системе", order)
-		return nil, fmt.Errorf("Заказа %s нет в системе", order)
+		msg := fmt.Sprintf("Заказа %s нет в системе", order)
+		logrus.Infoln(msg)
+		return nil, fmt.Errorf("%s", msg)
 
 	case 429:
 		logrus.Infoln("Превышено количество запросов")
 		return nil, fmt.Errorf("rate limited: status 429")
 
 	default:
-		return nil, fmt.Errorf("Ошибочный статус %d", r.StatusCode())
+		msg := fmt.Sprintf("Ошибочный статус %d", r.StatusCode())
+		return nil, fmt.Errorf("%s", msg)
 	}
 }
 

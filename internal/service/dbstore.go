@@ -154,7 +154,8 @@ func (as *AccumulationSystem) saveStatusOrderDB(ctx context.Context, user string
 
 	tx, err := as.database.BeginTxx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("Ошибка создания транзакции: %w", err)
+		msg := fmt.Sprintf("Ошибка создания транзакции: %s", err.Error())
+		return errors.New(msg)
 	}
 	defer func() {
 		_ = tx.Rollback()
@@ -218,7 +219,8 @@ func (as *AccumulationSystem) saveEndStatusOrderDB(ctx context.Context, user str
 func (as *AccumulationSystem) saveBalanceAndWithdrawDB(ctx context.Context, user string, balance *model.Balance, withdraw *model.Withdraw) error {
 	tx, err := as.database.BeginTxx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("Ошибка создания транзакции: %w", err)
+		msg := fmt.Sprintf("ошибка создания транзакции: %s", err.Error())
+		return errors.New(msg)
 	}
 	defer func() {
 		_ = tx.Rollback()

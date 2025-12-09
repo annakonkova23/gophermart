@@ -43,7 +43,7 @@ func getEnvInt(envKey string, defaultValue int) int {
 
 func GetConfig() *Config {
 	hostFlag := flag.String("a", defaultHost, "Адрес запуска HTTP-сервера")
-	dbUriFlag := flag.String("d", defaultDBUri, "Адрес подключения к базе данных")
+	dbURIFlag := flag.String("d", defaultDBUri, "Адрес подключения к базе данных")
 	accrualAddressFlag := flag.String("r", defaultAccrualAddress, "Aдрес системы расчёта начислений")
 	countProcessFlag := flag.Int("p", defaultCountProcess, "Количество worker")
 	bufferSizeFlag := flag.Int("b", defaultBufferSize, "Размер буфера каналов")
@@ -51,7 +51,7 @@ func GetConfig() *Config {
 	flag.Parse()
 
 	host := getEnvString("RUN_ADDRESS", *hostFlag)
-	dbUri := getEnvString("DATABASE_URI", *dbUriFlag)
+	dbURI := getEnvString("DATABASE_URI", *dbURIFlag)
 	accrualAddress := getEnvString("ACCRUAL_SYSTEM_ADDRESS", *accrualAddressFlag)
 	countProcess := getEnvInt("COUNT_PROCESS", *countProcessFlag)
 	bufferSize := getEnvInt("BUFFER_SIZE", *bufferSizeFlag)
@@ -59,7 +59,7 @@ func GetConfig() *Config {
 
 	return &Config{
 		Host:           host,
-		DBUri:          dbUri,
+		DBUri:          dbURI,
 		AccrualAddress: accrualAddress,
 		Timeout:        time.Second * time.Duration(timeout),
 		CountProcess:   countProcess,

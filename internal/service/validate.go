@@ -1,7 +1,7 @@
 package service
 
 import (
-	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -53,11 +53,13 @@ func (as *AccumulationSystem) LuhnValid(number string) bool {
 func (as *AccumulationSystem) LoginValid(login string) error {
 	login = strings.TrimSpace(login)
 	if login == "" {
-		return errors.New("Логин пустой")
+		msg := "Логин пустой"
+		return fmt.Errorf("%s", msg)
 	}
 
 	if !loginRegexp.MatchString(login) {
-		return errors.New("Логин может быть 3-32 символа и содержать буквы, цифры, '.', '_' и '-'")
+		msg := "Логин может быть 3-32 символа и содержать буквы, цифры, '.', '_' и '-'"
+		return fmt.Errorf("%s", msg)
 	}
 
 	return nil
