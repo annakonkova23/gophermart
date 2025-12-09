@@ -11,7 +11,6 @@ type JSONDecimal struct {
 }
 
 func (d JSONDecimal) MarshalJSON() ([]byte, error) {
-	// пишем число как токен JSON без кавычек
 	return []byte(d.Decimal.String()), nil
 }
 

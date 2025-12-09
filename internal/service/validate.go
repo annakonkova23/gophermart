@@ -2,26 +2,27 @@ package service
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 )
 
-// LuhnValid проверяет строку number по алгоритму Луна.
+var loginRegexp = regexp.MustCompile(`^[a-zA-Z0-9_.-]{3,32}$`)
+
 func (as *AccumulationSystem) LuhnValid(number string) bool {
 	sum := 0
-	alt := false // флаг: удваивать ли текущую цифру
+	alt := false
 
-	digits := 0 // чтобы отсеять пустую строку / только пробелы
+	digits := 0
 
 	for i := len(number) - 1; i >= 0; i-- {
 		ch := number[i]
 
-		// пропускаем пробелы
 		if ch == ' ' {
 			continue
 		}
 
 		if ch < '0' || ch > '9' {
-			return false // недопустимый символ
+			return false
 		}
 
 		d := int(ch - '0')
@@ -52,11 +53,11 @@ func (as *AccumulationSystem) LuhnValid(number string) bool {
 func (as *AccumulationSystem) LoginValid(login string) error {
 	login = strings.TrimSpace(login)
 	if login == "" {
-		return errors.New("login is required")
+		return errors.New("Логин пустой")
 	}
 
 	if !loginRegexp.MatchString(login) {
-		return errors.New("login must be 3-32 chars and contain only letters, digits, '.', '_' or '-'")
+		return errors.New("Логин может быть 3-32 символа и содержать буквы, цифры, '.', '_' и '-'")
 	}
 
 	return nil

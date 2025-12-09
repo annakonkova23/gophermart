@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"sync"
 )
@@ -23,14 +22,10 @@ func (sbt *SessionsByToken) AuthMiddleware(next http.Handler) http.Handler {
 
 		user, ok := sbt.session.Load(c.Value)
 		if !ok {
-			fmt.Println("not author")
 			http.Error(w, "Пользователь не авторизован", http.StatusUnauthorized)
 			return
-		} else {
-			fmt.Println(user)
 		}
 
-		// кладём юзера в контекст
 		ctx := context.WithValue(r.Context(), UserCtxKey{}, user)
 		r = r.WithContext(ctx)
 
@@ -42,7 +37,6 @@ func (sbt *SessionsByToken) AddSession(token, user string) {
 	sbt.session.Store(token, user)
 }
 
-// helper, чтобы доставать пользователя в хендлерах
 func CurrentUser(r *http.Request) string {
 	if v := r.Context().Value(UserCtxKey{}); v != nil {
 		if u, ok := v.(string); ok {

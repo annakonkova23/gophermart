@@ -30,7 +30,6 @@ func NewServer(url string, accSystem *service.AccumulationSystem) *Server {
 	}
 	s.mux.Use(middleware.CompressMiddleware)
 	s.mux.Use(middleware.LoggingMiddleware)
-	//s.mux.Use(middleware.AuthMiddleware(key))
 	s.mux.Post("/api/user/register", s.registerUser)
 	s.mux.Post("/api/user/login", s.authUser)
 

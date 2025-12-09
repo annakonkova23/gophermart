@@ -53,12 +53,10 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 			"body":         string(bodyBytes),
 		}).Info("Получен запрос")
 
-		// Обёртка для записи статуса и размера ответа
 		logger := &responseLogger{ResponseWriter: w}
 
 		next.ServeHTTP(logger, r)
 
-		// Логируем завершение
 		logrus.WithFields(logrus.Fields{
 			"method":      method,
 			"uri":         uri,

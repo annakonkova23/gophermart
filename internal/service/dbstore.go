@@ -54,7 +54,6 @@ func (as *AccumulationSystem) createOrderDB(userLogin, orderNumber string) error
 	var status string
 	var errorMessage sql.NullString
 
-	// Вызываем функцию
 	err := as.database.QueryRowx(
 		`SELECT status, error_message FROM accum_system.create_order($1, $2)`,
 		orderNumber,
@@ -65,7 +64,6 @@ func (as *AccumulationSystem) createOrderDB(userLogin, orderNumber string) error
 		return fmt.Errorf("ошибка добавления в DB: %w", err)
 	}
 
-	// Обрабатываем статус
 	switch status {
 	case "success":
 		return nil
@@ -101,7 +99,6 @@ func (as *AccumulationSystem) getOrderDB(userLogin string) ([]*model.Order, erro
 
 	err := as.database.Select(&orders, query, userLogin)
 	if err != nil {
-		// Обработка ошибки: нет данных, ошибка подключения и т.д.
 		if err == sql.ErrNoRows {
 			return nil, model.ErrorNotContent
 		}
@@ -122,7 +119,6 @@ func (as *AccumulationSystem) getBalanceDB(userLogin string) (*model.Balance, er
 
 	err := as.database.Get(&balance, query, userLogin)
 	if err != nil {
-		// Обработка ошибки: нет данных, ошибка подключения и т.д.
 		if err == sql.ErrNoRows {
 			return nil, model.ErrorNotContent
 		}
@@ -145,7 +141,6 @@ func (as *AccumulationSystem) getWithdrawalsDB(userLogin string) ([]*model.Withd
 
 	err := as.database.Select(&withdrawals, query, userLogin)
 	if err != nil {
-		// Обработка ошибки: нет данных, ошибка подключения и т.д.
 		if err == sql.ErrNoRows {
 			return nil, model.ErrorNotContent
 		}
@@ -237,7 +232,6 @@ func (as *AccumulationSystem) saveBalanceAndWithdrawDB(ctx context.Context, user
 	if err != nil {
 		return fmt.Errorf("ошибка вставки в accum_system.orders_withdrawals: %w", err)
 	}
-	fmt.Println("обновляем ", balance.Balance, balance.Withdrawn)
 	_, err = tx.ExecContext(ctx, `
         INSERT INTO accum_system.users_balance (user_login, balance, withdrawn)
         VALUES ($1, $2, $3)
@@ -252,24 +246,6 @@ func (as *AccumulationSystem) saveBalanceAndWithdrawDB(ctx context.Context, user
 
 	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("ошибка коммита транзакции: %w", err)
-	}
-
-	return nil
-}
-
-func (as *AccumulationSystem) saveBalanceDB(user string, balance *model.Balance) error {
-	query := `
-       INSERT INTO accum_system.users_balance (user_login, balance, withdrawn)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (user_login) DO UPDATE
-        SET 
-            balance = EXCLUDED.balance,
-            withdrawn = EXCLUDED.withdrawn
-    `
-
-	_, err := as.database.Exec(query, user, balance.Balance, balance.Withdrawn)
-	if err != nil {
-		return fmt.Errorf("ошибка обновления баланса: %w", err)
 	}
 
 	return nil
@@ -292,7 +268,6 @@ func (as *AccumulationSystem) loadOrderNotProcessedDB() ([]*model.Order, error) 
 
 	err := as.database.Select(&orders, query)
 	if err != nil {
-		// Обработка ошибки: нет данных, ошибка подключения и т.д.
 		if err == sql.ErrNoRows {
 			return nil, model.ErrorNotContent
 		}
@@ -312,7 +287,6 @@ func (as *AccumulationSystem) getAllBalanceDB() ([]*model.Balance, error) {
 
 	err := as.database.Select(&balances, query)
 	if err != nil {
-		// Обработка ошибки: нет данных, ошибка подключения и т.д.
 		if err == sql.ErrNoRows {
 			return nil, model.ErrorNotContent
 		}

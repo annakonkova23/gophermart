@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"regexp"
 	"sync"
 	"time"
 
@@ -12,8 +11,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
 )
-
-var loginRegexp = regexp.MustCompile(`^[a-zA-Z0-9_.-]{3,32}$`)
 
 type AccumulationSystem struct {
 	users           sync.Map
@@ -29,9 +26,9 @@ func NewAccumulationSystem(ctx context.Context, database *sqlx.DB, cfg *config.C
 	as := &AccumulationSystem{
 		users:           sync.Map{},
 		database:        database,
-		client:          accrual.NewAccrualClient(ctx, cfg.AccrualAddress, 10, 10*time.Second, 1000),
-		newOrders:       make(chan string, 1000),
-		timeoutInterval: time.Second * 10,
+		client:          accrual.NewAccrualClient(ctx, cfg.AccrualAddress, cfg.CountProcess, cfg.Timeout, cfg.BufferSize),
+		newOrders:       make(chan string, cfg.BufferSize),
+		timeoutInterval: cfg.Timeout,
 	}
 	go as.monitorNewOrder(ctx)
 
