@@ -10,6 +10,7 @@ import (
 	"github.com/annakonkova23/gophermart/internal/config/db"
 	"github.com/annakonkova23/gophermart/internal/handler"
 	"github.com/annakonkova23/gophermart/internal/service"
+	"github.com/annakonkova23/gophermart/internal/worker"
 	"github.com/sirupsen/logrus"
 )
 
@@ -26,6 +27,7 @@ func main() {
 	if err := db.RunMigrations(cfg.DBUri); err != nil {
 		log.Fatal("Ошибка при установке миграций:", err)
 	}
+
 	accumSystem, err := service.NewAccumulationSystem(ctx, database, cfg)
 	if err != nil {
 		log.Fatal(err)
@@ -38,6 +40,9 @@ func main() {
 			logrus.Error(err)
 		}
 	}()
+
+	wrkr := worker.NewWorker(accumSystem)
+	wrkr.StartWorkers(ctx, cfg.CountProcess)
 
 	<-ctx.Done()
 	logrus.Println("Сервер остановлен")

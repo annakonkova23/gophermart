@@ -28,7 +28,7 @@ func (as *AccumulationSystem) UpdateCurrentOrder(number string, order *model.Ord
 
 func (as *AccumulationSystem) InitOrders() error {
 	logrus.Infoln("Инициализация необработанных заказов")
-	orders, err := as.loadOrderNotProcessedDB()
+	orders, err := as.database.LoadOrderNotProcessedDB()
 	if err != nil {
 		return err
 	}

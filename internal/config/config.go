@@ -9,7 +9,6 @@ import (
 
 const (
 	defaultHost           = "localhost:8080"
-	defaultDBUri          = "postgres://user_main:user_main@localhost:5432/gophermartdb?sslmode=disable"
 	defaultAccrualAddress = "http://localhost:8090"
 	defaultTimeout        = 10
 	defaultCountProcess   = 10
@@ -43,7 +42,7 @@ func getEnvInt(envKey string, defaultValue int) int {
 
 func GetConfig() *Config {
 	hostFlag := flag.String("a", defaultHost, "Адрес запуска HTTP-сервера")
-	dbURIFlag := flag.String("d", defaultDBUri, "Адрес подключения к базе данных")
+	dbURIFlag := flag.String("d", "", "Адрес подключения к базе данных")
 	accrualAddressFlag := flag.String("r", defaultAccrualAddress, "Aдрес системы расчёта начислений")
 	countProcessFlag := flag.Int("p", defaultCountProcess, "Количество worker")
 	bufferSizeFlag := flag.Int("b", defaultBufferSize, "Размер буфера каналов")

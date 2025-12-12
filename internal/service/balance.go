@@ -14,7 +14,7 @@ func (as *AccumulationSystem) getBalance(user string) *model.Balance {
 }
 
 func (as *AccumulationSystem) InitBalance() error {
-	balances, err := as.getAllBalanceDB()
+	balances, err := as.database.GetAllBalanceDB()
 	if err != nil {
 		return err
 	}
