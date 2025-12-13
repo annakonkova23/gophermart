@@ -1,0 +1,68 @@
+package middleware
+
+import (
+	"bytes"
+	"io"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/sirupsen/logrus"
+)
+
+type responseLogger struct {
+	http.ResponseWriter
+	status int
+	size   int
+}
+
+func (l *responseLogger) WriteHeader(code int) {
+	if l.status != 0 {
+		return
+	}
+	l.status = code
+	l.ResponseWriter.WriteHeader(code)
+}
+
+func (l *responseLogger) Write(b []byte) (int, error) {
+	if l.status == 0 {
+		l.status = http.StatusOK
+	}
+	size, err := l.ResponseWriter.Write(b)
+	l.size += size
+	return size, err
+}
+
+func LoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		uri := r.URL.RequestURI()
+		method := r.Method
+		contentType := r.Header.Get("Content-Type")
+
+		var bodyBytes []byte
+		if r.Body != nil && (contentType == "" || !strings.HasPrefix(contentType, "multipart/")) {
+			bodyBytes, _ = io.ReadAll(r.Body)
+			r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		}
+
+		logrus.WithFields(logrus.Fields{
+			"method":       method,
+			"uri":          uri,
+			"content_type": contentType,
+			"body":         string(bodyBytes),
+		}).Info("Получен запрос")
+
+		logger := &responseLogger{ResponseWriter: w}
+
+		next.ServeHTTP(logger, r)
+
+		logrus.WithFields(logrus.Fields{
+			"method":      method,
+			"uri":         uri,
+			"status":      logger.status,
+			"duration":    time.Since(start).String(),
+			"content_len": logger.size,
+		}).Info("Запрос выполнен")
+	})
+}
