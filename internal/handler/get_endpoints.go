@@ -41,7 +41,12 @@ func (s *Server) getOrders(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(bodyResult)
+	_, err = w.Write(bodyResult)
+	if err != nil {
+		logrus.Errorln(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Server) getBalance(w http.ResponseWriter, r *http.Request) {
@@ -71,7 +76,12 @@ func (s *Server) getBalance(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(bodyResult)
+	_, err = w.Write(bodyResult)
+	if err != nil {
+		logrus.Errorln(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Server) getWithdrawals(w http.ResponseWriter, r *http.Request) {
@@ -101,5 +111,10 @@ func (s *Server) getWithdrawals(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(bodyResult)
+	_, err = w.Write(bodyResult)
+	if err != nil {
+		logrus.Errorln(err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 }

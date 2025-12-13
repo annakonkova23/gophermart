@@ -12,13 +12,7 @@ import (
 func (ds *DBStore) GetBalanceDB(userLogin string) (*model.Balance, error) {
 	var balance model.Balance
 
-	query := `
-        SELECT balance, withdrawn
-        FROM accum_system.users_balance
-        WHERE user_login = $1
-    `
-
-	err := ds.database.Get(&balance, query, userLogin)
+	err := ds.database.Get(&balance, selectBalanceUser, userLogin)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, model.ErrorNotContent
@@ -32,15 +26,7 @@ func (ds *DBStore) GetBalanceDB(userLogin string) (*model.Balance, error) {
 func (ds *DBStore) GetWithdrawalsDB(userLogin string) ([]*model.Withdraw, error) {
 	var withdrawals []*model.Withdraw
 
-	query := `
-        SELECT  number,
-    			sum,
-    			processed_at
-        FROM accum_system.orders_withdrawals
-        WHERE user_login = $1
-    `
-
-	err := ds.database.Select(&withdrawals, query, userLogin)
+	err := ds.database.Select(&withdrawals, selectWithdrawals, userLogin)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, model.ErrorNotContent
@@ -61,22 +47,11 @@ func (ds *DBStore) SaveBalanceAndWithdrawDB(ctx context.Context, user string, ba
 		_ = tx.Rollback()
 	}()
 
-	_, err = tx.ExecContext(ctx, `
-        INSERT INTO accum_system.orders_withdrawals (user_login, number, sum, processed_at)
-        VALUES ($1, $2, $3, $4)
-        ON CONFLICT (number) DO NOTHING
-    `, user, withdraw.OrderNumber, withdraw.Sum, withdraw.ProcessedAt)
+	_, err = tx.ExecContext(ctx, insertwithdrawals, user, withdraw.OrderNumber, withdraw.Sum, withdraw.ProcessedAt)
 	if err != nil {
 		return fmt.Errorf("ошибка вставки в accum_system.orders_withdrawals: %w", err)
 	}
-	_, err = tx.ExecContext(ctx, `
-        INSERT INTO accum_system.users_balance (user_login, balance, withdrawn)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (user_login) DO UPDATE
-        SET 
-            balance = EXCLUDED.balance,
-            withdrawn = EXCLUDED.withdrawn
-    `, user, balance.Balance, balance.Withdrawn)
+	_, err = tx.ExecContext(ctx, updateUserBalance, user, balance.Balance, balance.Withdrawn)
 	if err != nil {
 		return fmt.Errorf(" ошибка вставки в accum_system.users_balance: %w", err)
 	}
@@ -91,12 +66,7 @@ func (ds *DBStore) SaveBalanceAndWithdrawDB(ctx context.Context, user string, ba
 func (ds *DBStore) GetAllBalanceDB() ([]*model.Balance, error) {
 	var balances []*model.Balance
 
-	query := `
-        SELECT balance, withdrawn, user_login 
-        FROM accum_system.users_balance
-    `
-
-	err := ds.database.Select(&balances, query)
+	err := ds.database.Select(&balances, selectAllBalance)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, model.ErrorNotContent

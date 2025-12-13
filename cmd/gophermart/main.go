@@ -45,6 +45,7 @@ func main() {
 	wrkr.StartWorkers(ctx, cfg.CountProcess)
 
 	<-ctx.Done()
+	server.Shutdown(ctx)
 	logrus.Println("Сервер остановлен")
 
 }

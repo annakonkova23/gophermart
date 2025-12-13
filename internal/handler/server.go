@@ -50,14 +50,13 @@ func NewServer(url string, accSystem *service.AccumulationSystem) *Server {
 }
 
 func (s *Server) Start(ctx context.Context) error {
-
-	go func() {
-		<-ctx.Done()
-		if err := s.srv.Shutdown(ctx); err != nil {
-			logrus.Error("Ошибка при закрытии сервера:", err)
-		}
-	}()
-
 	err := s.srv.ListenAndServe()
 	return err
+}
+
+func (s *Server) Shutdown(ctx context.Context) {
+	if err := s.srv.Shutdown(ctx); err != nil {
+		_ = s.srv.Close()
+		logrus.Error("Ошибка при закрытии сервера:", err)
+	}
 }

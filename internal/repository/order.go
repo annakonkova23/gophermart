@@ -16,8 +16,7 @@ func (ds *DBStore) CreateOrderDB(userLogin, orderNumber string) error {
 	var status string
 	var errorMessage sql.NullString
 
-	err := ds.database.QueryRowx(
-		`SELECT status, error_message FROM accum_system.create_order($1, $2)`,
+	err := ds.database.QueryRowx(execCreateOrder,
 		orderNumber,
 		userLogin,
 	).Scan(&status, &errorMessage)
@@ -47,19 +46,7 @@ func (ds *DBStore) CreateOrderDB(userLogin, orderNumber string) error {
 func (ds *DBStore) GetOrderDB(userLogin string) ([]*model.Order, error) {
 	var orders []*model.Order
 
-	query := `
-        SELECT 
-            o.number AS number,
-            os.status,
-            os.accrual,
-            os.uploaded_at
-        FROM accum_system.orders o
-        JOIN accum_system.orders_status os ON o.number = os.number
-        WHERE o.user_login = $1
-        ORDER BY os.uploaded_at DESC
-    `
-
-	err := ds.database.Select(&orders, query, userLogin)
+	err := ds.database.Select(&orders, selectOrderStatus, userLogin)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, model.ErrorNotContent
@@ -80,17 +67,8 @@ func (ds *DBStore) SaveStatusOrderDB(ctx context.Context, user string, order *mo
 	defer func() {
 		_ = tx.Rollback()
 	}()
-	query := `
-        INSERT INTO accum_system.orders_status (number, status, accrual, uploaded_at)
-        VALUES ($1, $2, $3, NOW())
-        ON CONFLICT (number) DO UPDATE
-        SET 
-            status = EXCLUDED.status,
-            accrual = EXCLUDED.accrual,
-            uploaded_at = NOW()
-    `
 
-	_, err = tx.ExecContext(ctx, query,
+	_, err = tx.ExecContext(ctx, updateOrderStatus,
 		order.Number,
 		order.Status,
 		order.Accrual,
@@ -99,14 +77,7 @@ func (ds *DBStore) SaveStatusOrderDB(ctx context.Context, user string, order *mo
 		return fmt.Errorf("ошибка обновления статуса: %w", err)
 	}
 	if balance != nil {
-		_, err = tx.ExecContext(ctx, `
-			INSERT INTO accum_system.users_balance (user_login, balance, withdrawn)
-			VALUES ($1, $2, $3)
-			ON CONFLICT (user_login) DO UPDATE
-			SET 
-				balance = EXCLUDED.balance,
-				withdrawn = EXCLUDED.withdrawn
-		`, user, balance.Balance, balance.Withdrawn)
+		_, err = tx.ExecContext(ctx, updateUserBalance, user, balance.Balance, balance.Withdrawn)
 		if err != nil {
 			return fmt.Errorf(" ошибка вставки в accum_system.users_balance: %w", err)
 		}
@@ -139,19 +110,7 @@ func (ds *DBStore) SaveEndStatusOrderDB(ctx context.Context, user string, order 
 func (ds *DBStore) LoadOrderNotProcessedDB() ([]*model.Order, error) {
 	var orders []*model.Order
 
-	query := `
-        SELECT 
-            o.number AS number,
-            os.status,
-            os.accrual,
-            os.uploaded_at,
-			o.user_login
-        FROM accum_system.orders o
-        JOIN accum_system.orders_status os ON o.number = os.number
-        WHERE status not in ('PROCESSED', 'INVALID')
-    `
-
-	err := ds.database.Select(&orders, query)
+	err := ds.database.Select(&orders, selectNewOrderStatus)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, model.ErrorNotContent

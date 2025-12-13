@@ -10,12 +10,8 @@ import (
 )
 
 func (ds *DBStore) CreateUserDB(user *model.User) error {
-	query := `
-		INSERT INTO accum_system.users (login, password)
-		VALUES ($1, $2);
-	`
 
-	_, err := ds.database.Exec(query, user.Login, user.Password)
+	_, err := ds.database.Exec(insertUser, user.Login, user.Password)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok {
 			if pgErr.Code == "23505" {
@@ -30,9 +26,8 @@ func (ds *DBStore) CreateUserDB(user *model.User) error {
 
 func (ds *DBStore) GetUserByLoginDB(login string) (*model.User, error) {
 	var loginDB, passwordDB string
-	query := `SELECT login, password FROM accum_system.users WHERE login = $1`
 
-	err := ds.database.QueryRow(query, login).Scan(&loginDB, &passwordDB)
+	err := ds.database.QueryRow(selectUserLogin, login).Scan(&loginDB, &passwordDB)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("user with login '%s' not found", login)
